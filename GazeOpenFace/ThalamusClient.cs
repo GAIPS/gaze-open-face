@@ -5,6 +5,7 @@ using NetMQ.Sockets;
 using NetMQ;
 using GazeOFMessages;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace GazeOpenFace
 {
@@ -22,9 +23,9 @@ namespace GazeOpenFace
                 this.publisher = publisher;
             }
 
-            public void GazeOpenFace(int faceId, double angleX, double angleY, string target)
+            public void GazeOpenFace(int faceId, double angleX, double angleY, string target, double timeMiliseconds)
             {
-                publisher.GazeOpenFace(faceId, angleX, angleY, target);
+                publisher.GazeOpenFace(faceId, angleX, angleY, target, timeMiliseconds);
             }
 
             public void TargetCalibrationFinished(int faceId, string target)
@@ -36,21 +37,37 @@ namespace GazeOpenFace
             {
                 publisher.TargetCalibrationStarted(faceId, target);
             }
+
+            public void CalibrationPhaseFinished()
+            {
+                publisher.CalibrationPhaseFinished();
+            }
         }
 
+        private int id;
         private GazePublisher gPublisher;
         SubscriberSocket socketSubscriber;
         public bool CalibrationPhase;
         private bool calibrateLEFT;
         private bool calibrateRIGHT;
         private int GROUND_TRUTH_SAMPLES = 100;
-        List<GazeAngle> leftGroundTruth = new List<GazeAngle>();
-        List<GazeAngle> rightGroundTruth = new List<GazeAngle>();
+        List<GazeAngle> leftGroundTruthSamples = new List<GazeAngle>();
+        List<GazeAngle> rightGroundTruthSamples = new List<GazeAngle>();
+        GazeAngle leftGroundTruth;
+        GazeAngle rightGroundTruth;
+        Stopwatch stopWatch;
+        private Thread MessageDispatcher;
+        private Thread CalibrationThread;
 
         public GazeThalamusClient() : base("GazeOpenFace", "SERA")
         {
+            id = 0;
+
             CalibrationPhase = true;
             calibrateLEFT = false;
+
+            stopWatch = new Stopwatch();
+            stopWatch.Start();
 
             SetPublisher<IGazePublisher>();
             gPublisher = new GazePublisher(Publisher);
@@ -62,10 +79,30 @@ namespace GazeOpenFace
 
         public override void ConnectedToMaster()
         {
-            Thread thread1 = new Thread(DispatchMessages);
-            thread1.Start();
-            Thread thread2 = new Thread(Calibration);
-            thread2.Start();
+            MessageDispatcher = new Thread(DispatchMessages);
+            MessageDispatcher.Start();
+            CalibrationThread = new Thread(Calibration);
+            CalibrationThread.Start();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            MessageDispatcher.Join();
+            CalibrationThread.Join();
+        }
+
+        private GazeAngle ComputeAvg(List<GazeAngle> lst)
+        {
+            float sumX = 0;
+            float sumY = 0;
+            foreach (var item in lst)
+            {
+                sumX += item.X;
+                sumY += item.Y;
+            }
+            int count = lst.Count;
+            return new GazeAngle(sumX / count, sumY / count);
         }
 
         public void Calibration()
@@ -77,11 +114,11 @@ namespace GazeOpenFace
             ConsoleKeyInfo cki = Console.ReadKey();
             if (cki.Key.ToString() == "L")
             {
-                gPublisher.TargetCalibrationStarted(0, "LEFT");
+                gPublisher.TargetCalibrationStarted(id, "LEFT");
                 calibrateLEFT = true;
             }
-            while (leftGroundTruth.Count < GROUND_TRUTH_SAMPLES) { }
-            gPublisher.TargetCalibrationFinished(0, "LEFT");
+            while (leftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES) { }
+            gPublisher.TargetCalibrationFinished(id, "LEFT");
             calibrateLEFT = false;
             Console.WriteLine("Finished calibrating LEFT target.");
             Console.WriteLine("---------------------------------------");
@@ -89,14 +126,21 @@ namespace GazeOpenFace
             cki = Console.ReadKey();
             if (cki.Key.ToString() == "R")
             {
+                gPublisher.TargetCalibrationStarted(id, "RIGHT");
                 calibrateRIGHT = true;
             }
-            while (rightGroundTruth.Count < GROUND_TRUTH_SAMPLES) { }
+            while (rightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES) { }
+            gPublisher.TargetCalibrationFinished(id, "RIGHT");
             calibrateRIGHT = false;
             Console.WriteLine("Finished calibrating RIGHT target.");
             Console.WriteLine("---------------------------------------");
             Console.WriteLine("---------------------------------------");
             Console.WriteLine("---------------------------------------");
+
+            leftGroundTruth = ComputeAvg(leftGroundTruthSamples);
+            rightGroundTruth = ComputeAvg(rightGroundTruthSamples);
+            Console.WriteLine("LEFT: " + leftGroundTruth.X + " , " + leftGroundTruth.Y + " RIGHT: " + rightGroundTruth.X + " , " + rightGroundTruth.Y);
+            gPublisher.CalibrationPhaseFinished();
             CalibrationPhase = false;
 
         }
@@ -112,21 +156,43 @@ namespace GazeOpenFace
 
                 if (CalibrationPhase)
                 {
-                    if (calibrateLEFT && leftGroundTruth.Count < GROUND_TRUTH_SAMPLES)
+                    if (calibrateLEFT && leftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
                     {
                         Console.WriteLine("Add sample to LEFT: {0}", msg);
-                        leftGroundTruth.Add(new GazeAngle(x, y));
+                        leftGroundTruthSamples.Add(new GazeAngle(x, y));
+                        gPublisher.GazeOpenFace(id, x, y, "LEFT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
                     }
-                    else if (calibrateRIGHT && rightGroundTruth.Count < GROUND_TRUTH_SAMPLES)
+                    else if (calibrateRIGHT && rightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
                     {
                         Console.WriteLine("Add sample to RIGHT: {0}", msg);
-                        rightGroundTruth.Add(new GazeAngle(x, y));
+                        rightGroundTruthSamples.Add(new GazeAngle(x, y));
+                        gPublisher.GazeOpenFace(id, x, y, "RIGHT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
                     }
                 }
                 else //calibration phase ended
                 {
-                    Console.WriteLine("From OpenFace: {0}", msg);
-                    gPublisher.GazeOpenFace(0, x, y, "left");
+                    double distLEFT = Math.Sqrt(Math.Pow(x - leftGroundTruth.X, 2) + Math.Pow(y - leftGroundTruth.Y, 2));
+                    double distRIGHT = Math.Sqrt(Math.Pow(x - rightGroundTruth.X, 2) + Math.Pow(y - rightGroundTruth.Y, 2));
+                    //Console.WriteLine("Dist-LEFT: {0}   Dist-RIGHT: {1}", distLEFT, distRIGHT);
+                    if (distLEFT < 10 && distRIGHT < 10)
+                    {
+                        Console.WriteLine("WEIRD CASE 1");
+                    }
+                    else if (distLEFT < 10)
+                    {
+                        //Console.WriteLine("<<<<<< LEFT");
+                        gPublisher.GazeOpenFace(id, x, y, "left", stopWatch.Elapsed.TotalMilliseconds);
+                    }
+                    else if (distRIGHT < 10)
+                    {
+                        //Console.WriteLine(">>>>>> RIGHT");
+                        gPublisher.GazeOpenFace(id, x, y, "right", stopWatch.Elapsed.TotalMilliseconds);
+                    }
+                    else
+                    {
+                        //Console.WriteLine("!!!! ELSEWHERE !!!!");
+                        gPublisher.GazeOpenFace(id, x, y, "elsewhere", stopWatch.Elapsed.TotalMilliseconds);
+                    }
                 }
             }
         }

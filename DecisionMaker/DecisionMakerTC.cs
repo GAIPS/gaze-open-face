@@ -2,6 +2,8 @@
 using Thalamus;
 using GazeOFMessages;
 using EmoteCommonMessages;
+using System.Threading;
+using System.Diagnostics;
 
 namespace DecisionMaker
 {
@@ -61,16 +63,70 @@ namespace DecisionMaker
         }
 
         private GazePublisher gPublisher;
+        private int ID;
+        private Player player0;
+        private Thread mainLoop;
+        private Stopwatch stopWatch;
+        private long nextGazeShiftEstimate;
+        private long previousGazeShitTime;
+        private string currentTarget;
+        private bool sessionStarted;
 
         public DecisionMakerTC() : base("DecisionMaker", "SERA")
         {
             SetPublisher<IGazePublisher>();
             gPublisher = new GazePublisher(Publisher);
+            ID = 1;
+            player0 = new Player(0);
+            currentTarget = "left";
+            stopWatch = new Stopwatch();
+            stopWatch.Start();
+            mainLoop = new Thread(Update);
+            mainLoop.Start();
         }
 
-        public void GazeOpenFace(int faceId, double angleX, double angleY, string target)
+        public override void Dispose()
         {
-            //DO SOMETHING
+            base.Dispose();
+            player0.Dispose();
+            mainLoop.Join();
+        }
+
+        private void Update()
+        {
+            while(true)
+            {
+                if (sessionStarted)
+                {
+                    if (stopWatch.ElapsedMilliseconds >= nextGazeShiftEstimate)
+                    {
+                        if (currentTarget == "right")
+                        {
+                            currentTarget = "left";
+                            gPublisher.GazeAtTarget(currentTarget);
+                        }
+                        else
+                        {
+                            currentTarget = "right";
+                            gPublisher.GazeAtTarget(currentTarget);
+                        }
+                        previousGazeShitTime = stopWatch.ElapsedMilliseconds;
+                    }
+                    nextGazeShiftEstimate = previousGazeShitTime + (long)player0.GazeShiftPeriod;
+                    Thread.Sleep(500);
+                }
+            }
+        }
+
+        public void GazeOpenFace(int faceId, double angleX, double angleY, string target, double timeMiliseconds)
+        {
+            if (faceId != ID)
+            {
+                if (player0.ID == faceId && (target == "left" || target == "right"))
+                {
+                    player0.GazeEvent(target, timeMiliseconds);
+                }
+            }
         }
 
         public void TargetCalibrationStarted(int faceId, string target)
@@ -81,6 +137,12 @@ namespace DecisionMaker
         public void TargetCalibrationFinished(int faceId, string target)
         {
             //DO SOMETHING
+        }
+
+        public void CalibrationPhaseFinished()
+        {
+            sessionStarted = true;
+            player0.SessionStarted = true;
         }
     }
 }
