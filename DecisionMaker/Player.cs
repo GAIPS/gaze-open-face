@@ -14,7 +14,7 @@ namespace DecisionMaker
         private double currentStartingTime;
         private double lastEventTime;
         public double GazeShiftPeriod;
-        public int PERIOD_TIME_WINDOW = 10000; //10 seconds
+        public int PERIOD_TIME_WINDOW = 5000; //5 seconds
         private List<GazeBehavior> gazeBehaviors;
         private List<GazeEvent> gazeEvents;
         public Thread UpdatesDispatcher;
