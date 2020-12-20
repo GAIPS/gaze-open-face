@@ -117,7 +117,8 @@ namespace DecisionMaker
                     }
                     double periodAvg = (player0.GazeShiftPeriod + player1.GazeShiftPeriod) / 2;
                     nextGazeShiftEstimate = previousGazeShitTime + (long) periodAvg;
-                    Thread.Sleep(500);
+                    Console.WriteLine("GazeShiftPeriod 0 - " + player0.GazeShiftPeriod + " / GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
+                    Thread.Sleep(100);
                 }
             }
         }

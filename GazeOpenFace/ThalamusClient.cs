@@ -61,7 +61,7 @@ namespace GazeOpenFace
 
         public GazeThalamusClient(string clientName, int faceId) : base(clientName, "SERA")
         {
-            id = 0;
+            id = faceId;
 
             CalibrationPhase = true;
             calibrateLEFT = false;

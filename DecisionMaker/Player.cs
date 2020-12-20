@@ -79,7 +79,7 @@ namespace DecisionMaker
                 {
                     GazeShiftPeriod = PERIOD_TIME_WINDOW;
                 }
-                Console.WriteLine("GazeShiftRate " + GazeShiftPeriod + " count: " + count);
+                Console.WriteLine("PLAYER " + ID + " - GazeShiftRate " + GazeShiftPeriod + " count: " + count);
             }
 
         }
