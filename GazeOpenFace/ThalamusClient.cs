@@ -38,9 +38,9 @@ namespace GazeOpenFace
                 publisher.TargetCalibrationStarted(faceId, target);
             }
 
-            public void CalibrationPhaseFinished()
+            public void CalibrationPhaseFinished(int faceId)
             {
-                publisher.CalibrationPhaseFinished();
+                publisher.CalibrationPhaseFinished(faceId);
             }
         }
 
@@ -59,7 +59,7 @@ namespace GazeOpenFace
         private Thread MessageDispatcher;
         private Thread CalibrationThread;
 
-        public GazeThalamusClient() : base("GazeOpenFace", "SERA")
+        public GazeThalamusClient(string clientName, int faceId) : base(clientName, "SERA")
         {
             id = 0;
 
@@ -140,7 +140,7 @@ namespace GazeOpenFace
             leftGroundTruth = ComputeAvg(leftGroundTruthSamples);
             rightGroundTruth = ComputeAvg(rightGroundTruthSamples);
             Console.WriteLine("LEFT: " + leftGroundTruth.X + " , " + leftGroundTruth.Y + " RIGHT: " + rightGroundTruth.X + " , " + rightGroundTruth.Y);
-            gPublisher.CalibrationPhaseFinished();
+            gPublisher.CalibrationPhaseFinished(id);
             CalibrationPhase = false;
 
         }

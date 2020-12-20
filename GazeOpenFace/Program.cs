@@ -10,10 +10,15 @@ namespace GazeOpenFace
     {
         static void Main(string[] args)
         {
-            GazeThalamusClient tc = new GazeThalamusClient();
-            while (tc.CalibrationPhase) { }
-            Console.ReadLine();
-            tc.Dispose();
+            if (args.Length == 2)
+            {
+                string clientName = args[0];
+                int id = int.Parse(args[1]);
+                GazeThalamusClient tc = new GazeThalamusClient(clientName, id);
+                while (tc.CalibrationPhase) { }
+                Console.ReadLine();
+                tc.Dispose();
+            }
         }
     }
 }

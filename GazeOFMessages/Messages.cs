@@ -8,6 +8,6 @@ namespace GazeOFMessages
         void GazeOpenFace(int faceId, double angleX, double angleY, string target, double timeMilisecons);
         void TargetCalibrationStarted(int faceId, string target);
         void TargetCalibrationFinished(int faceId, string target);
-        void CalibrationPhaseFinished();
+        void CalibrationPhaseFinished(int faceId);
     }
 }

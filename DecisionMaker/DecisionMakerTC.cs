@@ -65,6 +65,7 @@ namespace DecisionMaker
         private GazePublisher gPublisher;
         private int ID;
         private Player player0;
+        private Player player1;
         private Thread mainLoop;
         private Stopwatch stopWatch;
         private long nextGazeShiftEstimate;
@@ -76,8 +77,9 @@ namespace DecisionMaker
         {
             SetPublisher<IGazePublisher>();
             gPublisher = new GazePublisher(Publisher);
-            ID = 1;
+            ID = 2;
             player0 = new Player(0);
+            player1 = new Player(1);
             currentTarget = "left";
             stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -89,6 +91,7 @@ namespace DecisionMaker
         {
             base.Dispose();
             player0.Dispose();
+            player1.Dispose();
             mainLoop.Join();
         }
 
@@ -112,7 +115,8 @@ namespace DecisionMaker
                         }
                         previousGazeShitTime = stopWatch.ElapsedMilliseconds;
                     }
-                    nextGazeShiftEstimate = previousGazeShitTime + (long)player0.GazeShiftPeriod;
+                    double periodAvg = (player0.GazeShiftPeriod + player1.GazeShiftPeriod) / 2;
+                    nextGazeShiftEstimate = previousGazeShitTime + (long) periodAvg;
                     Thread.Sleep(500);
                 }
             }
@@ -126,6 +130,11 @@ namespace DecisionMaker
                 {
                     player0.GazeEvent(target, timeMiliseconds);
                 }
+                else if (player1.ID == faceId && (target == "left" || target == "right"))
+                {
+                    player1.GazeEvent(target, timeMiliseconds);
+                }
+
             }
         }
 
@@ -139,10 +148,21 @@ namespace DecisionMaker
             //DO SOMETHING
         }
 
-        public void CalibrationPhaseFinished()
+        public void CalibrationPhaseFinished(int faceId)
         {
-            sessionStarted = true;
-            player0.SessionStarted = true;
+            if (faceId == player0.ID)
+            {
+                player0.SessionStarted = true;
+            }
+            else if (faceId == player1.ID)
+            {
+                player1.SessionStarted = true;
+            }
+
+            if (player0.SessionStarted && player1.SessionStarted)
+            {
+                sessionStarted = true;
+            }
         }
     }
 }
