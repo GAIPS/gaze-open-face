@@ -147,51 +147,59 @@ namespace GazeOpenFace
 
         public void DispatchMessages()
         {
+            int buffer = 0;
             while (true)
             {
-                var msg = socketSubscriber.ReceiveFrameString();
-                string[] angles = msg.Substring(10).Replace(" ", "").Split(',');
-                float x = float.Parse(angles[0]) * -1;
-                float y = float.Parse(angles[1]) * -1;
+                buffer++;
+                if (buffer == 5)
+                {
+                    buffer = 0;
 
-                if (CalibrationPhase)
-                {
-                    if (calibrateLEFT && leftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+
+                    var msg = socketSubscriber.ReceiveFrameString();
+                    string[] angles = msg.Substring(10).Replace(" ", "").Split(',');
+                    float x = float.Parse(angles[0]) * -1;
+                    float y = float.Parse(angles[1]) * -1;
+
+                    if (CalibrationPhase)
                     {
-                        Console.WriteLine("Add sample to LEFT: {0}", msg);
-                        leftGroundTruthSamples.Add(new GazeAngle(x, y));
-                        gPublisher.GazeOpenFace(id, x, y, "LEFT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
+                        if (calibrateLEFT && leftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                        {
+                            Console.WriteLine("Add sample to LEFT: {0}", msg);
+                            leftGroundTruthSamples.Add(new GazeAngle(x, y));
+                            gPublisher.GazeOpenFace(id, x, y, "LEFT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
+                        }
+                        else if (calibrateRIGHT && rightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                        {
+                            Console.WriteLine("Add sample to RIGHT: {0}", msg);
+                            rightGroundTruthSamples.Add(new GazeAngle(x, y));
+                            gPublisher.GazeOpenFace(id, x, y, "RIGHT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
+                        }
                     }
-                    else if (calibrateRIGHT && rightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                    else //calibration phase ended
                     {
-                        Console.WriteLine("Add sample to RIGHT: {0}", msg);
-                        rightGroundTruthSamples.Add(new GazeAngle(x, y));
-                        gPublisher.GazeOpenFace(id, x, y, "RIGHT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
-                    }
-                }
-                else //calibration phase ended
-                {
-                    double distLEFT = Math.Sqrt(Math.Pow(x - leftGroundTruth.X, 2) + Math.Pow(y - leftGroundTruth.Y, 2));
-                    double distRIGHT = Math.Sqrt(Math.Pow(x - rightGroundTruth.X, 2) + Math.Pow(y - rightGroundTruth.Y, 2));
-                    //Console.WriteLine("Dist-LEFT: {0}   Dist-RIGHT: {1}", distLEFT, distRIGHT);
-                    if (distLEFT < 10 && distRIGHT < 10)
-                    {
-                        Console.WriteLine("WEIRD CASE 1");
-                    }
-                    else if (distLEFT < 10)
-                    {
-                        //Console.WriteLine("<<<<<< LEFT");
-                        gPublisher.GazeOpenFace(id, x, y, "left", stopWatch.Elapsed.TotalMilliseconds);
-                    }
-                    else if (distRIGHT < 10)
-                    {
-                        //Console.WriteLine(">>>>>> RIGHT");
-                        gPublisher.GazeOpenFace(id, x, y, "right", stopWatch.Elapsed.TotalMilliseconds);
-                    }
-                    else
-                    {
-                        //Console.WriteLine("!!!! ELSEWHERE !!!!");
-                        gPublisher.GazeOpenFace(id, x, y, "elsewhere", stopWatch.Elapsed.TotalMilliseconds);
+                        double distLEFT = Math.Sqrt(Math.Pow(x - leftGroundTruth.X, 2) + Math.Pow(y - leftGroundTruth.Y, 2));
+                        double distRIGHT = Math.Sqrt(Math.Pow(x - rightGroundTruth.X, 2) + Math.Pow(y - rightGroundTruth.Y, 2));
+                        //Console.WriteLine("Dist-LEFT: {0}   Dist-RIGHT: {1}", distLEFT, distRIGHT);
+                        if (distLEFT < 10 && distRIGHT < 10)
+                        {
+                            Console.WriteLine("WEIRD CASE 1");
+                        }
+                        else if (distLEFT < 10)
+                        {
+                            //Console.WriteLine("<<<<<< LEFT");
+                            gPublisher.GazeOpenFace(id, x, y, "left", stopWatch.Elapsed.TotalMilliseconds);
+                        }
+                        else if (distRIGHT < 10)
+                        {
+                            //Console.WriteLine(">>>>>> RIGHT");
+                            gPublisher.GazeOpenFace(id, x, y, "right", stopWatch.Elapsed.TotalMilliseconds);
+                        }
+                        else
+                        {
+                            //Console.WriteLine("!!!! ELSEWHERE !!!!");
+                            gPublisher.GazeOpenFace(id, x, y, "elsewhere", stopWatch.Elapsed.TotalMilliseconds);
+                        }
                     }
                 }
             }

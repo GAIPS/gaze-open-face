@@ -115,9 +115,23 @@ namespace DecisionMaker
                         }
                         previousGazeShitTime = stopWatch.ElapsedMilliseconds;
                     }
-                    double periodAvg = (player0.GazeShiftPeriod + player1.GazeShiftPeriod) / 2;
-                    nextGazeShiftEstimate = previousGazeShitTime + (long) periodAvg;
-                    Console.WriteLine("GazeShiftPeriod 0 - " + player0.GazeShiftPeriod + " / GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
+
+                    if (player0.SessionStarted && player1.SessionStarted)
+                    {
+                        double periodAvg = (player0.GazeShiftPeriod + player1.GazeShiftPeriod) / 2;
+                        nextGazeShiftEstimate = previousGazeShitTime + (long)periodAvg;
+                        Console.WriteLine("---- GazeShiftPeriod 0 - " + player0.GazeShiftPeriod + " / GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
+                    }
+                    else if (player0.SessionStarted)
+                    {
+                        nextGazeShiftEstimate = previousGazeShitTime + (long)player0.GazeShiftPeriod;
+                        Console.WriteLine(">>>>> GazeShiftPeriod 0 - " + player0.GazeShiftPeriod);
+                    }
+                    else if (player1.SessionStarted)
+                    {
+                        nextGazeShiftEstimate = previousGazeShitTime + (long)player1.GazeShiftPeriod;
+                        Console.WriteLine(">>>>> GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
+                    }
                     Thread.Sleep(100);
                 }
             }
@@ -125,7 +139,7 @@ namespace DecisionMaker
 
         public void GazeOpenFace(int faceId, double angleX, double angleY, string target, double timeMiliseconds)
         {
-            if (faceId != ID)
+            if (faceId != ID && sessionStarted)
             {
                 if (player0.ID == faceId && (target == "left" || target == "right"))
                 {

@@ -86,6 +86,7 @@ namespace DecisionMaker
 
         internal void Dispose()
         {
+            Console.WriteLine("------------------------- gazeBehaviors.size - " + gazeBehaviors.Count);
             GazeEventsDispatcher.Join();
             UpdatesDispatcher.Join();
         }
