@@ -50,7 +50,7 @@ namespace GazeOpenFace
         public bool CalibrationPhase;
         private bool calibrateLEFT;
         private bool calibrateRIGHT;
-        private int GROUND_TRUTH_SAMPLES = 100;
+        private int GROUND_TRUTH_SAMPLES = 20;
         List<GazeAngle> leftGroundTruthSamples = new List<GazeAngle>();
         List<GazeAngle> rightGroundTruthSamples = new List<GazeAngle>();
         GazeAngle leftGroundTruth;
@@ -150,13 +150,12 @@ namespace GazeOpenFace
             int buffer = 0;
             while (true)
             {
+                var msg = socketSubscriber.ReceiveFrameString();
+
                 buffer++;
                 if (buffer == 5)
                 {
                     buffer = 0;
-
-
-                    var msg = socketSubscriber.ReceiveFrameString();
                     string[] angles = msg.Substring(10).Replace(" ", "").Split(',');
                     float x = float.Parse(angles[0]) * -1;
                     float y = float.Parse(angles[1]) * -1;

@@ -68,8 +68,8 @@ namespace DecisionMaker
         private Player player1;
         private Thread mainLoop;
         private Stopwatch stopWatch;
-        private long nextGazeShiftEstimate;
-        private long previousGazeShitTime;
+        private int nextGazeShiftEstimate;
+        //private long previousGazeShitTime;
         private string currentTarget;
         private bool sessionStarted;
 
@@ -81,6 +81,7 @@ namespace DecisionMaker
             player0 = new Player(0);
             player1 = new Player(1);
             currentTarget = "left";
+            nextGazeShiftEstimate = 0;
             stopWatch = new Stopwatch();
             stopWatch.Start();
             mainLoop = new Thread(Update);
@@ -101,6 +102,7 @@ namespace DecisionMaker
             {
                 if (sessionStarted)
                 {
+                    Console.WriteLine("-------------------------nextGazeShiftEstimate: " + nextGazeShiftEstimate);
                     if (stopWatch.ElapsedMilliseconds >= nextGazeShiftEstimate)
                     {
                         if (currentTarget == "right")
@@ -113,23 +115,23 @@ namespace DecisionMaker
                             currentTarget = "right";
                             gPublisher.GazeAtTarget(currentTarget);
                         }
-                        previousGazeShitTime = stopWatch.ElapsedMilliseconds;
+                        stopWatch.Restart();
                     }
 
                     if (player0.SessionStarted && player1.SessionStarted)
                     {
                         double periodAvg = (player0.GazeShiftPeriod + player1.GazeShiftPeriod) / 2;
-                        nextGazeShiftEstimate = previousGazeShitTime + (long)periodAvg;
+                        nextGazeShiftEstimate = (int) periodAvg;
                         Console.WriteLine("---- GazeShiftPeriod 0 - " + player0.GazeShiftPeriod + " / GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
                     }
                     else if (player0.SessionStarted)
                     {
-                        nextGazeShiftEstimate = previousGazeShitTime + (long)player0.GazeShiftPeriod;
+                        nextGazeShiftEstimate = (int) player0.GazeShiftPeriod;
                         Console.WriteLine(">>>>> GazeShiftPeriod 0 - " + player0.GazeShiftPeriod);
                     }
                     else if (player1.SessionStarted)
                     {
-                        nextGazeShiftEstimate = previousGazeShitTime + (long)player1.GazeShiftPeriod;
+                        nextGazeShiftEstimate = (int) player1.GazeShiftPeriod;
                         Console.WriteLine(">>>>> GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
                     }
                     Thread.Sleep(100);
@@ -168,6 +170,7 @@ namespace DecisionMaker
             if (faceId == player0.ID)
             {
                 player0.SessionStarted = true;
+                //sessionStarted = true;
             }
             else if (faceId == player1.ID)
             {
