@@ -48,26 +48,30 @@ namespace GazeOpenFace
         private GazePublisher gPublisher;
         SubscriberSocket socketSubscriber;
         public bool CalibrationPhase;
-        private bool calibrateLEFT;
-        private bool calibrateRIGHT;
         private int GROUND_TRUTH_SAMPLES = 100;
-        private int TARGET_THRESHOLD = 80;
-        List<GazeAngle> gazeLeftGroundTruthSamples = new List<GazeAngle>();
-        List<GazeAngle> gazeRightGroundTruthSamples = new List<GazeAngle>();
-        List<HeadPose> headLeftGroundTruthSamples = new List<HeadPose>();
-        List<HeadPose> headRightGroundTruthSamples = new List<HeadPose>();
-        Point2D leftLocationFromCam;
-        Point2D rightLocationFromCam;
+        private int DIST_THRESHOLD = 80;
+        List<GazeTarget> gazeTargets;
         Stopwatch stopWatch;
         private Thread MessageDispatcher;
         private Thread CalibrationThread;
+
+        enum Targets
+        {
+            LEFT = 0,
+            RIGHT = 1,
+            TABLET = 2,
+            MAINSCREEN = 3
+        }
 
         public GazeThalamusClient(string clientName, int faceId) : base(clientName, "SERA")
         {
             id = faceId;
 
             CalibrationPhase = true;
-            calibrateLEFT = false;
+            gazeTargets = new List<GazeTarget>();
+            // ADD TARGETS IN THE SAME ORDER of enum Targets
+            gazeTargets.Add(new GazeTarget("left", GROUND_TRUTH_SAMPLES, DIST_THRESHOLD));
+            gazeTargets.Add(new GazeTarget("right", GROUND_TRUTH_SAMPLES, DIST_THRESHOLD));
 
             stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -95,61 +99,31 @@ namespace GazeOpenFace
             CalibrationThread.Join();
         }
 
-        private Point2D ComputeLocationFromCam(GazeAngle ga, HeadPose hp)
-        {
-            float x = hp.L_Z * (float) Math.Tan(ga.X * Math.PI / 180) + hp.L_X;
-            float y = hp.L_Z * (float) Math.Tan(ga.Y * Math.PI / 180) + hp.L_Y;
-            return new Point2D(x, y);
-        }
-
-        private Point2D ComputeAVGLocationFromCam(List<GazeAngle> gazeAngleList, List<HeadPose> headPoseList)
-        {
-            float sum_x = 0;
-            float sum_y = 0;
-            for (int i = 0; i < GROUND_TRUTH_SAMPLES; i++)
-            {
-                Point2D p = ComputeLocationFromCam(gazeAngleList[i], headPoseList[i]);
-                sum_x += p.X;
-                sum_y += p.Y;
-            }
-            return new Point2D(sum_x / GROUND_TRUTH_SAMPLES, sum_y / GROUND_TRUTH_SAMPLES);
-        }
-
         public void Calibration()
         {
             Console.WriteLine("---------------------------------------");
             Console.WriteLine("-------------- CALIBRATION ------------");
             Console.WriteLine("---------------------------------------");
-            Console.WriteLine("To calibrate target LEFT press <l> when the person is looking there.");
-            ConsoleKeyInfo cki = Console.ReadKey();
-            if (cki.Key.ToString() == "L")
+            for (int i = 0; i < gazeTargets.Count; i++)
             {
-                gPublisher.TargetCalibrationStarted(id, "LEFT");
-                calibrateLEFT = true;
+                Console.WriteLine("To calibrate target " + gazeTargets[i].Name + " press <C> when the person is looking there.");
+                ConsoleKeyInfo cki = Console.ReadKey();
+                if (cki.Key.ToString() == "C")
+                {
+                    gPublisher.TargetCalibrationStarted(id, gazeTargets[i].Name);
+                    gazeTargets[i].IsCalibrationStarted = true;
+                }
+                while (!gazeTargets[i].IsCalibrationFinished) { }
+                gPublisher.TargetCalibrationFinished(id, gazeTargets[i].Name);
+                Console.WriteLine("Finished calibrating " + gazeTargets[i].Name + " target.");
+                Console.WriteLine("---------------------------------------");
             }
-            while (gazeLeftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES || headLeftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES) { }
-            gPublisher.TargetCalibrationFinished(id, "LEFT");
-            calibrateLEFT = false;
-            Console.WriteLine("Finished calibrating LEFT target.");
-            Console.WriteLine("---------------------------------------");
-            Console.WriteLine("To calibrate target RIGHT press <r> when the person is looking there.");
-            cki = Console.ReadKey();
-            if (cki.Key.ToString() == "R")
-            {
-                gPublisher.TargetCalibrationStarted(id, "RIGHT");
-                calibrateRIGHT = true;
-            }
-            while (gazeRightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES || headRightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES) { }
-            gPublisher.TargetCalibrationFinished(id, "RIGHT");
-            calibrateRIGHT = false;
-            Console.WriteLine("Finished calibrating RIGHT target.");
-            Console.WriteLine("---------------------------------------");
             Console.WriteLine("---------------------------------------");
             Console.WriteLine("---------------------------------------");
 
-            leftLocationFromCam = ComputeAVGLocationFromCam(gazeLeftGroundTruthSamples, headLeftGroundTruthSamples);
-            rightLocationFromCam = ComputeAVGLocationFromCam(gazeRightGroundTruthSamples, headRightGroundTruthSamples);
-            Console.WriteLine("LEFT: " + leftLocationFromCam.X + " , " + leftLocationFromCam.Y + " RIGHT: " + rightLocationFromCam.X + " , " + rightLocationFromCam.Y);
+            gazeTargets[(int)Targets.LEFT].ComputeAVGLocationFromCam();
+            gazeTargets[(int)Targets.RIGHT].ComputeAVGLocationFromCam();
+            //Console.WriteLine("LEFT: " + leftLocationFromCam.X + " , " + leftLocationFromCam.Y + " RIGHT: " + rightLocationFromCam.X + " , " + rightLocationFromCam.Y);
             gPublisher.CalibrationPhaseFinished(id);
             CalibrationPhase = false;
 
@@ -181,16 +155,16 @@ namespace GazeOpenFace
 
                     if (CalibrationPhase)
                     {
-                        if (calibrateLEFT && gazeLeftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                        if (gazeTargets[(int)Targets.LEFT].IsCalibrationStarted && !gazeTargets[(int)Targets.LEFT].IsGazeDirEnoughSamples())
                         {
+                            gazeTargets[(int)Targets.LEFT].AddGazeDirSample(new GazeAngle(GA_x, GA_y));
                             Console.WriteLine("Add GAZE sample to LEFT: {0}, {1}", GA_x, GA_y);
-                            gazeLeftGroundTruthSamples.Add(new GazeAngle(GA_x, GA_y));
-                            //gPublisher.GazeOpenFace(id, GA_x, GA_y, "LEFT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
+                            //gPublisher.GazeOpenFace(id, GA_x, GA_y, "LEFT                                                                                                                                                                                                                                                             _GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
                         }
-                        else if (calibrateRIGHT && gazeRightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                        else if (gazeTargets[(int)Targets.RIGHT].IsCalibrationStarted && !gazeTargets[(int)Targets.RIGHT].IsGazeDirEnoughSamples())
                         {
+                            gazeTargets[(int)Targets.RIGHT].AddGazeDirSample(new GazeAngle(GA_x, GA_y));
                             Console.WriteLine("Add GAZE sample to RIGHT: {0}, {1}", GA_x, GA_y);
-                            gazeRightGroundTruthSamples.Add(new GazeAngle(GA_x, GA_y));
                             //gPublisher.GazeOpenFace(id, GA_x, GA_y, "RIGHT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
                         }
                     }
@@ -210,17 +184,16 @@ namespace GazeOpenFace
 
                     if (CalibrationPhase)
                     {
-
-                        if (calibrateLEFT && headLeftGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                        if (gazeTargets[(int)Targets.LEFT].IsCalibrationStarted && !gazeTargets[(int)Targets.LEFT].IsHeadPoseEnoughSamples())
                         {
+                            gazeTargets[(int)Targets.LEFT].AddHeadPoseSample(new HeadPose(HL_x, HL_y, HL_z, HR_x, HR_y, HR_z));
                             Console.WriteLine("Add HEAD sample to LEFT: {0},{1},{2} / {3},{4},{5}", HL_x, HL_y, HL_z, HR_x, HR_y, HR_z);
-                            headLeftGroundTruthSamples.Add(new HeadPose(HL_x, HL_y, HL_z, HR_x, HR_y, HR_z));
                             //gPublisher.GazeOpenFace(id, GA_x, GA_y, "LEFT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
                         }
-                        else if (calibrateRIGHT && headRightGroundTruthSamples.Count < GROUND_TRUTH_SAMPLES)
+                        else if (gazeTargets[(int)Targets.RIGHT].IsCalibrationStarted && !gazeTargets[(int)Targets.RIGHT].IsHeadPoseEnoughSamples())
                         {
+                            gazeTargets[(int)Targets.RIGHT].AddHeadPoseSample(new HeadPose(HL_x, HL_y, HL_z, HR_x, HR_y, HR_z));
                             Console.WriteLine("Add HEAD sample to RIGHT: {0},{1},{2} / {3},{4},{5}", HL_x, HL_y, HL_z, HR_x, HR_y, HR_z);
-                            headRightGroundTruthSamples.Add(new HeadPose(HL_x, HL_y, HL_z, HR_x, HR_y, HR_z));
                             //gPublisher.GazeOpenFace(id, GA_x, GA_y, "RIGHT_GROUND_TRUTH", stopWatch.Elapsed.TotalMilliseconds);
                         }
                     }
@@ -228,22 +201,23 @@ namespace GazeOpenFace
                     {
                         GazeAngle newGA = new GazeAngle(GA_x, GA_y);
                         HeadPose newHP = new HeadPose(HL_x, HL_y, HL_z, HR_x, HR_y, HR_z);
-                        Point2D newLocationFromCam = ComputeLocationFromCam(newGA, newHP);
-                        double distLEFT = Math.Sqrt(Math.Pow(newLocationFromCam.X - leftLocationFromCam.X, 2) + Math.Pow(newLocationFromCam.Y - leftLocationFromCam.Y, 2));
-                        double distRIGHT = Math.Sqrt(Math.Pow(newLocationFromCam.X - rightLocationFromCam.X, 2) + Math.Pow(newLocationFromCam.Y - rightLocationFromCam.Y, 2));
+                        Point2D newLocationFromCam = GazeTarget.ComputeLocationFromCam(newGA, newHP);
+
+                        double distLEFT = gazeTargets[(int)Targets.LEFT].DistanceFromPoint(newLocationFromCam);
+                        double distRIGHT = gazeTargets[(int)Targets.RIGHT].DistanceFromPoint(newLocationFromCam);
                         //Console.WriteLine("Dist-LEFT: {0}   Dist-RIGHT: {1}", distLEFT, distRIGHT);
                         //Console.WriteLine("X,Y: {0},{1}   Left: {2},{3}   Right: {4},{5}", newLocationFromCam.X, newLocationFromCam.Y, leftLocationFromCam.X, leftLocationFromCam.Y, rightLocationFromCam.X, rightLocationFromCam.Y);
 
-                        if (distLEFT <= TARGET_THRESHOLD && distRIGHT <= TARGET_THRESHOLD)
+                        if (gazeTargets[(int)Targets.LEFT].IsLookingAtTarget(distLEFT) && gazeTargets[(int)Targets.RIGHT].IsLookingAtTarget(distRIGHT))
                         {
                             Console.WriteLine("WEIRD CASE");
                         }
-                        else if (distLEFT <= TARGET_THRESHOLD)
+                        else if (gazeTargets[(int)Targets.LEFT].IsLookingAtTarget(distLEFT))
                         {
                             //Console.WriteLine("LEFT");
                             gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "left", stopWatch.Elapsed.TotalMilliseconds);
                         }
-                        else if (distRIGHT <= TARGET_THRESHOLD)
+                        else if (gazeTargets[(int)Targets.RIGHT].IsLookingAtTarget(distRIGHT))
                         {
                             gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "right", stopWatch.Elapsed.TotalMilliseconds);
                             //Console.WriteLine("RIGHT");

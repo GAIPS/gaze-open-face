@@ -86,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GazeAngle.cs" />
+    <Compile Include="GazeTarget.cs" />
     <Compile Include="HeadPose.cs" />
     <Compile Include="Point2D.cs" />
     <Compile Include="Program.cs" />
