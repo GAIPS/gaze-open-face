@@ -78,8 +78,8 @@ namespace DecisionMaker
             SetPublisher<IGazePublisher>();
             gPublisher = new GazePublisher(Publisher);
             ID = 2;
-            player0 = new Player(0);
-            player1 = new Player(1);
+            player0 = new Player(0, "right");
+            player1 = new Player(1, "left");
             currentTarget = "left";
             nextGazeShiftEstimate = 0;
             stopWatch = new Stopwatch();
@@ -105,14 +105,16 @@ namespace DecisionMaker
                     Console.WriteLine("-------------------------nextGazeShiftEstimate: " + nextGazeShiftEstimate);
                     if (stopWatch.ElapsedMilliseconds >= nextGazeShiftEstimate)
                     {
-                        if (currentTarget == "right")
+                        if (currentTarget == "mainscreen")
                         {
+                            nextGazeShiftEstimate = (int) (player0.GazeRobotAvgDur * 1000);
                             currentTarget = "left";
                             gPublisher.GazeAtTarget(currentTarget);
                         }
                         else
                         {
-                            currentTarget = "right";
+                            nextGazeShiftEstimate = (int)(player0.GazeRobotPeriod * 1000);
+                            currentTarget = "mainscreen";
                             gPublisher.GazeAtTarget(currentTarget);
                         }
                         stopWatch.Restart();
@@ -126,7 +128,7 @@ namespace DecisionMaker
                     }
                     else if (player0.SessionStarted)
                     {
-                        nextGazeShiftEstimate = (int) player0.GazeShiftPeriod;
+                        //nextGazeShiftEstimate = (int) player0.GazeShiftPeriod;
                         Console.WriteLine(">>>>> GazeShiftPeriod 0 - " + player0.GazeShiftPeriod);
                     }
                     else if (player1.SessionStarted)
@@ -134,7 +136,7 @@ namespace DecisionMaker
                         nextGazeShiftEstimate = (int) player1.GazeShiftPeriod;
                         Console.WriteLine(">>>>> GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
                     }
-                    Thread.Sleep(100);
+                    Thread.Sleep(500);
                 }
             }
         }
@@ -143,11 +145,11 @@ namespace DecisionMaker
         {
             if (faceId != ID && sessionStarted)
             {
-                if (player0.ID == faceId && (target == "left" || target == "right"))
+                if (player0.ID == faceId)
                 {
                     player0.GazeEvent(target, timeMiliseconds);
                 }
-                else if (player1.ID == faceId && (target == "left" || target == "right"))
+                else if (player1.ID == faceId)
                 {
                     player1.GazeEvent(target, timeMiliseconds);
                 }
@@ -170,7 +172,7 @@ namespace DecisionMaker
             if (faceId == player0.ID)
             {
                 player0.SessionStarted = true;
-                //sessionStarted = true;
+                sessionStarted = true;
             }
             else if (faceId == player1.ID)
             {

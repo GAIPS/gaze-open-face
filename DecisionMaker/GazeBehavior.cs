@@ -22,5 +22,21 @@ namespace DecisionMaker
             EndingTime = endingTime;
             Duration = endingTime - startingTime;
         }
+
+        public GazeBehavior(int id, string target, double startingTime)
+        {
+            GazerID = id;
+            Target = target;
+            StartingTime = startingTime;
+            EndingTime = 0;
+            Duration = 0;
+        }
+
+        public void UpdateEndtingTime(double endingTime)
+        {
+            EndingTime = endingTime;
+            Duration = endingTime - StartingTime;
+        }
+
     }
 }

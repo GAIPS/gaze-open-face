@@ -202,21 +202,21 @@ namespace GazeOpenFace
                         else if (gazeTargets[(int)Targets.MAINSCREEN].IsLookingAtTarget(distMAINSCREEN))
                         {
                             Console.WriteLine("MAINSCREEN");
-                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.MAINSCREEN].Name, stopWatch.Elapsed.TotalMilliseconds);
+                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.MAINSCREEN].Name, stopWatch.Elapsed.TotalSeconds);
                         }
                         else if (gazeTargets[(int)Targets.LEFT].IsLookingAtTarget(distLEFT))
                         {
                             Console.WriteLine("LEFT");
-                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.LEFT].Name, stopWatch.Elapsed.TotalMilliseconds);
+                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.LEFT].Name, stopWatch.Elapsed.TotalSeconds);
                         }
                         else if (gazeTargets[(int)Targets.RIGHT].IsLookingAtTarget(distRIGHT))
                         {
-                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.RIGHT].Name, stopWatch.Elapsed.TotalMilliseconds);
+                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.RIGHT].Name, stopWatch.Elapsed.TotalSeconds);
                             Console.WriteLine("RIGHT");
                         }
                         else
                         {
-                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "elsewhere", stopWatch.Elapsed.TotalMilliseconds);
+                            gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "elsewhere", stopWatch.Elapsed.TotalSeconds);
                             Console.WriteLine("ELSEWHERE");
                         }
                     }

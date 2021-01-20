@@ -10,24 +10,28 @@ namespace DecisionMaker
     class Player
     {
         public int ID;
-        private string currentGazeTarget;
-        private double currentStartingTime;
+        private string robotTarget;
+        private GazeBehavior currentGazeBehaviour;
         private double lastEventTime;
         public double GazeShiftPeriod;
-        public int PERIOD_TIME_WINDOW = 5000; //5 seconds
+        public double GazeRobotAvgDur;
+        public double GazeRobotPeriod;
+        public int PERIOD_TIME_WINDOW = 5; //5 seconds
         private List<GazeBehavior> gazeBehaviors;
         private List<GazeEvent> gazeEvents;
         public Thread UpdatesDispatcher;
         public Thread GazeEventsDispatcher;
         public static Mutex mut = new Mutex();
         public bool SessionStarted;
+        private List<string> buffer;
 
-        public Player(int id)
+        public Player(int id, string targetOfRobot)
         {
             ID = id;
-            currentGazeTarget = "";
-            currentStartingTime = 0;
+            robotTarget = targetOfRobot;
+            currentGazeBehaviour = null;
             SessionStarted = false;
+            buffer = new List<string>();
             gazeBehaviors = new List<GazeBehavior>();
             gazeEvents = new List<GazeEvent>();
             GazeEventsDispatcher = new Thread(DispacthGazeEvents);
@@ -38,11 +42,24 @@ namespace DecisionMaker
 
         public void GazeEvent(string target, double timeMiliseconds)
         {
-            GazeEvent ge = new GazeEvent(target, timeMiliseconds);
+            if (currentGazeBehaviour == null || currentGazeBehaviour.Target != target)
+            {
+                if (buffer.Count > 0 && buffer[0] != target)
+                {
+                    buffer = new List<string>();
+                }
+                buffer.Add(target);
+            }
 
-            mut.WaitOne();
-            gazeEvents.Add(ge);
-            mut.ReleaseMutex();
+            if (buffer.Count == 3)
+            {
+                buffer = new List<string>();
+                GazeEvent ge = new GazeEvent(target, timeMiliseconds);
+
+                mut.WaitOne();
+                gazeEvents.Add(ge);
+                mut.ReleaseMutex();
+            }
         }
 
         private void Updates()
@@ -63,23 +80,45 @@ namespace DecisionMaker
             {
                 GazeBehavior gb = gazeBehaviors.Last();
                 double timeThreshold = lastEventTime - PERIOD_TIME_WINDOW;
-                int count = 0;
+                int numGazeShifts = 0;
+                int numGazeAtRobot = 0;
+                double durGazeAtRobot = 0;
+                if (currentGazeBehaviour.Target == robotTarget)
+                {
+                    numGazeAtRobot++;
+                    durGazeAtRobot += currentGazeBehaviour.Duration;
+                }
                 for (int i = gazeBehaviors.Count - 1; i >= 0 && gazeBehaviors[i].EndingTime > timeThreshold; i--)
                 {
-                    if (gazeBehaviors[i].Target == "left" || gazeBehaviors[i].Target == "right")
+                    numGazeShifts++;
+                    if (gazeBehaviors[i].Target == robotTarget)
                     {
-                        count++;
+                        numGazeAtRobot++;
+                        durGazeAtRobot += gazeBehaviors[i].Duration;
                     }
                 }
-                if (count != 0)
+                if (numGazeShifts != 0)
                 {
-                    GazeShiftPeriod = PERIOD_TIME_WINDOW / count;
+                    GazeShiftPeriod = PERIOD_TIME_WINDOW / numGazeShifts;
                 }
                 else
                 {
                     GazeShiftPeriod = PERIOD_TIME_WINDOW;
                 }
-                Console.WriteLine("PLAYER " + ID + " - GazeShiftRate " + GazeShiftPeriod + " count: " + count);
+                Console.WriteLine("PLAYER " + ID + " - GazeShiftRate " + GazeShiftPeriod + " count: " + numGazeShifts);
+
+                if (numGazeAtRobot != 0)
+                {
+                    durGazeAtRobot /= numGazeAtRobot;
+                    GazeRobotAvgDur = durGazeAtRobot;
+                    GazeRobotPeriod = PERIOD_TIME_WINDOW / numGazeAtRobot;
+                }
+                else
+                {
+                    GazeRobotAvgDur = 1;
+                    GazeRobotPeriod = PERIOD_TIME_WINDOW;
+                }
+                Console.WriteLine("PLAYER " + ID + " ------ numGazeAtRobot " + numGazeAtRobot + " durGazeAtRobot: " + durGazeAtRobot);
             }
 
         }
@@ -107,21 +146,21 @@ namespace DecisionMaker
                 if (ge != null)
                 {
                     lastEventTime = ge.Timestamp;
-                    if (ge.Target != currentGazeTarget)
+                    
+                    //first time
+                    if (currentGazeBehaviour == null)
                     {
-                        //first time
-                        if (currentStartingTime == 0)
-                        {
-                            currentStartingTime = ge.Timestamp;
-                            currentGazeTarget = ge.Target;
-                        }
-                        else //all the time except first
-                        {
-                            GazeBehavior gb = new GazeBehavior(ID, currentGazeTarget, currentStartingTime, ge.Timestamp);
-                            gazeBehaviors.Add(gb);
-                            currentStartingTime = ge.Timestamp;
-                            currentGazeTarget = ge.Target;
-                        }
+                        currentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
+                    }
+                    else if(ge.Target != currentGazeBehaviour.Target)
+                    {
+                        currentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
+                        gazeBehaviors.Add(currentGazeBehaviour);
+                        currentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
+                    }
+                    else if (ge.Target == currentGazeBehaviour.Target)
+                    {
+                        currentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
                     }
                 }
             }
