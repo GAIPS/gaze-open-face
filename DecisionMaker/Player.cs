@@ -16,7 +16,7 @@ namespace DecisionMaker
         public double GazeShiftPeriod;
         public double GazeRobotAvgDur;
         public double GazeRobotPeriod;
-        public int PERIOD_TIME_WINDOW = 5; //5 seconds
+        public int PERIOD_TIME_WINDOW = 10; //5 seconds
         private List<GazeBehavior> gazeBehaviors;
         private List<GazeEvent> gazeEvents;
         public Thread UpdatesDispatcher;
@@ -60,6 +60,7 @@ namespace DecisionMaker
                 gazeEvents.Add(ge);
                 mut.ReleaseMutex();
             }
+            lastEventTime = timeMiliseconds;
         }
 
         private void Updates()
@@ -80,6 +81,7 @@ namespace DecisionMaker
             {
                 GazeBehavior gb = gazeBehaviors.Last();
                 double timeThreshold = lastEventTime - PERIOD_TIME_WINDOW;
+                Console.WriteLine("lastEventTime " + lastEventTime + " timeThreshold " + timeThreshold);
                 int numGazeShifts = 0;
                 int numGazeAtRobot = 0;
                 double durGazeAtRobot = 0;
@@ -105,7 +107,7 @@ namespace DecisionMaker
                 {
                     GazeShiftPeriod = PERIOD_TIME_WINDOW;
                 }
-                Console.WriteLine("PLAYER " + ID + " - GazeShiftRate " + GazeShiftPeriod + " count: " + numGazeShifts);
+                //Console.WriteLine("PLAYER " + ID + " - GazeShiftRate " + GazeShiftPeriod + " count: " + numGazeShifts);
 
                 if (numGazeAtRobot != 0)
                 {
@@ -118,7 +120,7 @@ namespace DecisionMaker
                     GazeRobotAvgDur = 1;
                     GazeRobotPeriod = PERIOD_TIME_WINDOW;
                 }
-                Console.WriteLine("PLAYER " + ID + " ------ numGazeAtRobot " + numGazeAtRobot + " durGazeAtRobot: " + durGazeAtRobot);
+                //Console.WriteLine("PLAYER " + ID + " ------ numGazeAtRobot " + numGazeAtRobot + " durGazeAtRobot: " + durGazeAtRobot);
             }
 
         }
@@ -145,7 +147,6 @@ namespace DecisionMaker
 
                 if (ge != null)
                 {
-                    lastEventTime = ge.Timestamp;
                     
                     //first time
                     if (currentGazeBehaviour == null)

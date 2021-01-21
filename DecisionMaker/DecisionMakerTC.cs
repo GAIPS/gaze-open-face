@@ -102,7 +102,7 @@ namespace DecisionMaker
             {
                 if (sessionStarted)
                 {
-                    Console.WriteLine("-------------------------nextGazeShiftEstimate: " + nextGazeShiftEstimate);
+                    //Console.WriteLine("-------------------------nextGazeShiftEstimate: " + nextGazeShiftEstimate);
                     if (stopWatch.ElapsedMilliseconds >= nextGazeShiftEstimate)
                     {
                         if (currentTarget == "mainscreen")
@@ -110,12 +110,14 @@ namespace DecisionMaker
                             nextGazeShiftEstimate = (int) (player0.GazeRobotAvgDur * 1000);
                             currentTarget = "left";
                             gPublisher.GazeAtTarget(currentTarget);
+                            Console.WriteLine("-------------------------looking at left for: " + nextGazeShiftEstimate);
                         }
                         else
                         {
                             nextGazeShiftEstimate = (int)(player0.GazeRobotPeriod * 1000);
                             currentTarget = "mainscreen";
                             gPublisher.GazeAtTarget(currentTarget);
+                            Console.WriteLine("------------------looking at mainscreen for: " + nextGazeShiftEstimate);
                         }
                         stopWatch.Restart();
                     }
@@ -128,8 +130,13 @@ namespace DecisionMaker
                     }
                     else if (player0.SessionStarted)
                     {
+                        if (currentTarget == "mainscreen")
+                        {
+                            nextGazeShiftEstimate = (int)(player0.GazeRobotPeriod * 1000);
+                            Console.WriteLine(">>>>> nextGazeShiftEstimate UPDATED - " + nextGazeShiftEstimate);
+                        }
                         //nextGazeShiftEstimate = (int) player0.GazeShiftPeriod;
-                        Console.WriteLine(">>>>> GazeShiftPeriod 0 - " + player0.GazeShiftPeriod);
+                        //Console.WriteLine(">>>>> GazeShiftPeriod 0 - " + player0.GazeShiftPeriod);
                     }
                     else if (player1.SessionStarted)
                     {
