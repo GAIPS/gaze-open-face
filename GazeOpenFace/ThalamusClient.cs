@@ -58,8 +58,8 @@ namespace GazeOpenFace
 
         enum Targets
         {
-            LEFT = 0,
-            RIGHT = 1,
+            PLAYER_A = 0,
+            PLAYER_B = 1,
             MAINSCREEN = 2
         }
 
@@ -70,8 +70,15 @@ namespace GazeOpenFace
             CalibrationPhase = true;
             gazeTargets = new List<GazeTarget>();
             // ADD TARGETS IN THE SAME ORDER of enum Targets
-            gazeTargets.Add(new GazeTarget("left", GROUND_TRUTH_SAMPLES, 80));
-            gazeTargets.Add(new GazeTarget("right", GROUND_TRUTH_SAMPLES, 80));
+            if (faceId == 0)
+            {
+                gazeTargets.Add(new GazeTarget("player1", GROUND_TRUTH_SAMPLES, 80));
+            }
+            else if (faceId == 1)
+            {
+                gazeTargets.Add(new GazeTarget("player0", GROUND_TRUTH_SAMPLES, 80));
+            }
+            gazeTargets.Add(new GazeTarget("player2", GROUND_TRUTH_SAMPLES, 80));
             gazeTargets.Add(new GazeTarget("mainscreen", GROUND_TRUTH_SAMPLES, 80));
 
             stopWatch = new Stopwatch();
@@ -147,7 +154,8 @@ namespace GazeOpenFace
                 buffer++;
                 var msg = socketSubscriber.ReceiveFrameString();
                 //Console.WriteLine(msg);
-                if (buffer == 1)
+                if (buffer == 1
+                    )
                 {
                     buffer = 0;
                     string[] firstParse = msg.Split(':');
@@ -194,13 +202,13 @@ namespace GazeOpenFace
                             HeadPose newHP = new HeadPose(HL_x, HL_y, HL_z, HR_x, HR_y, HR_z);
                             Point2D newLocationFromCam = GazeTarget.ComputeLocationFromCam(newGA, newHP);
 
-                            double distLEFT = gazeTargets[(int)Targets.LEFT].DistanceFromPoint(newLocationFromCam);
-                            double distRIGHT = gazeTargets[(int)Targets.RIGHT].DistanceFromPoint(newLocationFromCam);
+                            double distPlayerA = gazeTargets[(int)Targets.PLAYER_A].DistanceFromPoint(newLocationFromCam);
+                            double distPlayerB = gazeTargets[(int)Targets.PLAYER_B].DistanceFromPoint(newLocationFromCam);
                             double distMAINSCREEN = gazeTargets[(int)Targets.MAINSCREEN].DistanceFromPoint(newLocationFromCam);
                             //Console.WriteLine("Dist-LEFT: {0}   Dist-RIGHT: {1}", distLEFT, distRIGHT);
                             //Console.WriteLine("X,Y: {0},{1}   Left: {2},{3}   Right: {4},{5}", newLocationFromCam.X, newLocationFromCam.Y, leftLocationFromCam.X, leftLocationFromCam.Y, rightLocationFromCam.X, rightLocationFromCam.Y);
 
-                            if (gazeTargets[(int)Targets.LEFT].IsLookingAtTarget(distLEFT) && gazeTargets[(int)Targets.RIGHT].IsLookingAtTarget(distRIGHT))
+                            if (gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA) && gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
                             {
                                 Console.WriteLine("WEIRD CASE");
                             }
@@ -209,15 +217,15 @@ namespace GazeOpenFace
                                 Console.WriteLine("MAINSCREEN");
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.MAINSCREEN].Name, stopWatch.Elapsed.TotalSeconds);
                             }
-                            else if (gazeTargets[(int)Targets.LEFT].IsLookingAtTarget(distLEFT))
+                            else if (gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA))
                             {
-                                Console.WriteLine("LEFT");
-                                gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.LEFT].Name, stopWatch.Elapsed.TotalSeconds);
+                                Console.WriteLine("PLAYER_A");
+                                gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_A].Name, stopWatch.Elapsed.TotalSeconds);
                             }
-                            else if (gazeTargets[(int)Targets.RIGHT].IsLookingAtTarget(distRIGHT))
+                            else if (gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
                             {
-                                gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.RIGHT].Name, stopWatch.Elapsed.TotalSeconds);
-                                Console.WriteLine("RIGHT");
+                                gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_B].Name, stopWatch.Elapsed.TotalSeconds);
+                                Console.WriteLine("PLAYER_B");
                             }
                             else
                             {

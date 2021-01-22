@@ -78,9 +78,9 @@ namespace DecisionMaker
             SetPublisher<IGazePublisher>();
             gPublisher = new GazePublisher(Publisher);
             ID = 2;
-            player0 = new Player(0, "right");
-            player1 = new Player(1, "left");
-            currentTarget = "left";
+            player0 = new Player(0);
+            player1 = new Player(1);
+            currentTarget = "mainscreen";
             nextGazeShiftEstimate = 0;
             stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -102,48 +102,21 @@ namespace DecisionMaker
             {
                 if (sessionStarted)
                 {
-                    //Console.WriteLine("-------------------------nextGazeShiftEstimate: " + nextGazeShiftEstimate);
-                    if (stopWatch.ElapsedMilliseconds >= nextGazeShiftEstimate)
+                    if (player0.SessionStarted && player0.CurrentGazeBehaviour != null)
                     {
-                        if (currentTarget == "mainscreen")
+                        if (player0.CurrentGazeBehaviour.Target == player0.PlayerGazeAtRobot && currentTarget != player0.RobotGazeAtPlayer)
                         {
-                            nextGazeShiftEstimate = (int) (player0.GazeRobotAvgDur * 1000);
-                            currentTarget = "left";
-                            gPublisher.GazeAtTarget(currentTarget);
-                            Console.WriteLine("-------------------------looking at left for: " + nextGazeShiftEstimate);
+                            currentTarget = player0.RobotGazeAtPlayer;
+                            gPublisher.GazeAtTarget(player0.RobotGazeAtPlayer);
+                            Console.WriteLine("------------ gaze at player");
                         }
-                        else
+                        else if (player0.CurrentGazeBehaviour.Target != player0.PlayerGazeAtRobot && currentTarget != player0.CurrentGazeBehaviour.Target)
                         {
-                            nextGazeShiftEstimate = (int)(player0.GazeRobotPeriod * 1000);
-                            currentTarget = "mainscreen";
-                            gPublisher.GazeAtTarget(currentTarget);
-                            Console.WriteLine("------------------looking at mainscreen for: " + nextGazeShiftEstimate);
+                            currentTarget = player0.CurrentGazeBehaviour.Target;
+                            gPublisher.GazeAtTarget(player0.CurrentGazeBehaviour.Target);
+                            Console.WriteLine("------------ gaze at where player is gazing " + player0.CurrentGazeBehaviour.Target);
                         }
-                        stopWatch.Restart();
                     }
-
-                    if (player0.SessionStarted && player1.SessionStarted)
-                    {
-                        double periodAvg = (player0.GazeShiftPeriod + player1.GazeShiftPeriod) / 2;
-                        nextGazeShiftEstimate = (int) periodAvg;
-                        Console.WriteLine("---- GazeShiftPeriod 0 - " + player0.GazeShiftPeriod + " / GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
-                    }
-                    else if (player0.SessionStarted)
-                    {
-                        if (currentTarget == "mainscreen")
-                        {
-                            nextGazeShiftEstimate = (int)(player0.GazeRobotPeriod * 1000);
-                            Console.WriteLine(">>>>> nextGazeShiftEstimate UPDATED - " + nextGazeShiftEstimate);
-                        }
-                        //nextGazeShiftEstimate = (int) player0.GazeShiftPeriod;
-                        //Console.WriteLine(">>>>> GazeShiftPeriod 0 - " + player0.GazeShiftPeriod);
-                    }
-                    else if (player1.SessionStarted)
-                    {
-                        nextGazeShiftEstimate = (int) player1.GazeShiftPeriod;
-                        Console.WriteLine(">>>>> GazeShiftPeriod 1 - " + player1.GazeShiftPeriod);
-                    }
-                    Thread.Sleep(500);
                 }
             }
         }

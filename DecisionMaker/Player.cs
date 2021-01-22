@@ -10,8 +10,9 @@ namespace DecisionMaker
     class Player
     {
         public int ID;
-        private string robotTarget;
-        private GazeBehavior currentGazeBehaviour;
+        public string PlayerGazeAtRobot;
+        public string RobotGazeAtPlayer;
+        public GazeBehavior CurrentGazeBehaviour;
         private double lastEventTime;
         public double GazeShiftPeriod;
         public double GazeRobotAvgDur;
@@ -25,11 +26,12 @@ namespace DecisionMaker
         public bool SessionStarted;
         private List<string> buffer;
 
-        public Player(int id, string targetOfRobot)
+        public Player(int id)
         {
             ID = id;
-            robotTarget = targetOfRobot;
-            currentGazeBehaviour = null;
+            PlayerGazeAtRobot = "player2";
+            RobotGazeAtPlayer = "player" + id;
+            CurrentGazeBehaviour = null;
             SessionStarted = false;
             buffer = new List<string>();
             gazeBehaviors = new List<GazeBehavior>();
@@ -42,7 +44,7 @@ namespace DecisionMaker
 
         public void GazeEvent(string target, double timeMiliseconds)
         {
-            if (currentGazeBehaviour == null || currentGazeBehaviour.Target != target)
+            if (CurrentGazeBehaviour == null || CurrentGazeBehaviour.Target != target)
             {
                 if (buffer.Count > 0 && buffer[0] != target)
                 {
@@ -81,19 +83,19 @@ namespace DecisionMaker
             {
                 GazeBehavior gb = gazeBehaviors.Last();
                 double timeThreshold = lastEventTime - PERIOD_TIME_WINDOW;
-                Console.WriteLine("lastEventTime " + lastEventTime + " timeThreshold " + timeThreshold);
+                //Console.WriteLine("lastEventTime " + lastEventTime + " timeThreshold " + timeThreshold);
                 int numGazeShifts = 0;
                 int numGazeAtRobot = 0;
                 double durGazeAtRobot = 0;
-                if (currentGazeBehaviour.Target == robotTarget)
+                if (CurrentGazeBehaviour.Target == PlayerGazeAtRobot)
                 {
                     numGazeAtRobot++;
-                    durGazeAtRobot += currentGazeBehaviour.Duration;
+                    durGazeAtRobot += CurrentGazeBehaviour.Duration;
                 }
                 for (int i = gazeBehaviors.Count - 1; i >= 0 && gazeBehaviors[i].EndingTime > timeThreshold; i--)
                 {
                     numGazeShifts++;
-                    if (gazeBehaviors[i].Target == robotTarget)
+                    if (gazeBehaviors[i].Target == PlayerGazeAtRobot)
                     {
                         numGazeAtRobot++;
                         durGazeAtRobot += gazeBehaviors[i].Duration;
@@ -149,19 +151,19 @@ namespace DecisionMaker
                 {
                     
                     //first time
-                    if (currentGazeBehaviour == null)
+                    if (CurrentGazeBehaviour == null)
                     {
-                        currentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
+                        CurrentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
                     }
-                    else if(ge.Target != currentGazeBehaviour.Target)
+                    else if(ge.Target != CurrentGazeBehaviour.Target)
                     {
-                        currentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
-                        gazeBehaviors.Add(currentGazeBehaviour);
-                        currentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
+                        CurrentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
+                        gazeBehaviors.Add(CurrentGazeBehaviour);
+                        CurrentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
                     }
-                    else if (ge.Target == currentGazeBehaviour.Target)
+                    else if (ge.Target == CurrentGazeBehaviour.Target)
                     {
-                        currentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
+                        CurrentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
                     }
                 }
             }
