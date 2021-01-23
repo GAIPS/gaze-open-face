@@ -74,6 +74,7 @@ namespace DecisionMaker
         private string currentTarget;
         private bool sessionStarted;
         private int PROACTIVE_THRESHOLD = 3000;//miliseconds
+        private int GAZE_MIN_DURATION = 1000;//miliseconds
         private Random random;
 
         public DecisionMakerTC() : base("DecisionMaker", "SERA")
@@ -107,7 +108,7 @@ namespace DecisionMaker
             {
                 if (sessionStarted)
                 {
-                    if (player0.SessionStarted && player0.CurrentGazeBehaviour != null && player1.SessionStarted && player1.CurrentGazeBehaviour != null)
+                    if (stopWatch.ElapsedMilliseconds >= GAZE_MIN_DURATION && player0.SessionStarted && player0.CurrentGazeBehaviour != null && player1.SessionStarted && player1.CurrentGazeBehaviour != null)
                     {
                         //reactive
                         if (LastMovingPlayer.IsGazingAtRobot() && currentTarget != LastMovingPlayer.Name)

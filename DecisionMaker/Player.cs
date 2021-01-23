@@ -17,7 +17,7 @@ namespace DecisionMaker
         public double GazeShiftPeriod;
         public double GazeRobotAvgDur;
         public double GazeRobotPeriod;
-        public int PERIOD_TIME_WINDOW = 5; //5 seconds
+        public int PERIOD_TIME_WINDOW = 10; //5 seconds
         private List<GazeBehavior> gazeBehaviors;
         private List<GazeEvent> gazeEvents;
         public Thread UpdatesDispatcher;
