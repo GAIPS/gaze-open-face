@@ -59,7 +59,7 @@ namespace DecisionMaker
                 buffer.Add(target);
             }
 
-            if (buffer.Count == 1)
+            if (buffer.Count == 3)
             {
                 buffer = new List<string>();
                 GazeEvent ge = new GazeEvent(target, timeMiliseconds);
@@ -79,7 +79,7 @@ namespace DecisionMaker
                 {
                     UpdateGazeShiftRate();
                 }
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
             }
         }
 
@@ -168,7 +168,7 @@ namespace DecisionMaker
                         CurrentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
                         if (ge.Target != "elsewhere")
                         {
-                            DecisionMakerTC.LastMovingRobot = this;
+                            DecisionMakerTC.LastMovingPlayer = this;
                         }
                     }
                     else if (ge.Target == CurrentGazeBehaviour.Target)

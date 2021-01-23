@@ -66,7 +66,7 @@ namespace DecisionMaker
         private int ID;
         private Player player0;
         private Player player1;
-        public static Player LastMovingRobot;
+        public static Player LastMovingPlayer;
         private Thread mainLoop;
         private Stopwatch stopWatch;
         private int nextGazeShiftEstimate;
@@ -81,6 +81,7 @@ namespace DecisionMaker
             ID = 2;
             player0 = new Player(0);
             player1 = new Player(1);
+            LastMovingPlayer = player0;
             currentTarget = "mainscreen";
             nextGazeShiftEstimate = 0;
             stopWatch = new Stopwatch();
@@ -105,17 +106,17 @@ namespace DecisionMaker
                 {
                     if (player0.SessionStarted && player0.CurrentGazeBehaviour != null && player1.SessionStarted && player1.CurrentGazeBehaviour != null)
                     {
-                        if (LastMovingRobot.IsGazingAtRobot() && currentTarget != LastMovingRobot.RobotGazeAtPlayer)
+                        if (LastMovingPlayer.IsGazingAtRobot() && currentTarget != LastMovingPlayer.RobotGazeAtPlayer)
                         {
-                            currentTarget = LastMovingRobot.RobotGazeAtPlayer;
-                            gPublisher.GazeAtTarget(LastMovingRobot.RobotGazeAtPlayer);
-                            Console.WriteLine("------------ gaze back " + LastMovingRobot.RobotGazeAtPlayer);
+                            currentTarget = LastMovingPlayer.RobotGazeAtPlayer;
+                            gPublisher.GazeAtTarget(LastMovingPlayer.RobotGazeAtPlayer);
+                            Console.WriteLine("------------ gaze back " + LastMovingPlayer.RobotGazeAtPlayer);
                         }
-                        else if (!LastMovingRobot.IsGazingAtRobot() && LastMovingRobot.CurrentGazeBehaviour.Target != "elsewhere" && currentTarget != LastMovingRobot.CurrentGazeBehaviour.Target)
+                        else if (!LastMovingPlayer.IsGazingAtRobot() && LastMovingPlayer.CurrentGazeBehaviour.Target != "elsewhere" && currentTarget != LastMovingPlayer.CurrentGazeBehaviour.Target)
                         {
-                            currentTarget = LastMovingRobot.CurrentGazeBehaviour.Target;
-                            gPublisher.GazeAtTarget(LastMovingRobot.CurrentGazeBehaviour.Target);
-                            Console.WriteLine("------------ gaze at where " + LastMovingRobot.RobotGazeAtPlayer + " is gazing " + LastMovingRobot.CurrentGazeBehaviour.Target);
+                            currentTarget = LastMovingPlayer.CurrentGazeBehaviour.Target;
+                            gPublisher.GazeAtTarget(LastMovingPlayer.CurrentGazeBehaviour.Target);
+                            Console.WriteLine("------------ gaze at where " + LastMovingPlayer.RobotGazeAtPlayer + " is gazing " + LastMovingPlayer.CurrentGazeBehaviour.Target);
                         }
                     }
                 }

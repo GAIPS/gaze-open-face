@@ -154,8 +154,7 @@ namespace GazeOpenFace
                 buffer++;
                 var msg = socketSubscriber.ReceiveFrameString();
                 //Console.WriteLine(msg);
-                if (buffer == 1
-                    )
+                if (buffer == 5)
                 {
                     buffer = 0;
                     string[] firstParse = msg.Split(':');
@@ -219,13 +218,13 @@ namespace GazeOpenFace
                             }
                             else if (gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA))
                             {
-                                Console.WriteLine("PLAYER_A");
+                                Console.WriteLine(gazeTargets[(int)Targets.PLAYER_A].Name);
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_A].Name, stopWatch.Elapsed.TotalSeconds);
                             }
                             else if (gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
                             {
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_B].Name, stopWatch.Elapsed.TotalSeconds);
-                                Console.WriteLine("PLAYER_B");
+                                Console.WriteLine(gazeTargets[(int)Targets.PLAYER_B].Name);
                             }
                             else
                             {
