@@ -33,11 +33,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CookComputing.XmlRpcV2">
-      <HintPath>..\..\SERA\Binaries\Thalamus\CookComputing.XmlRpcV2.dll</HintPath>
+    <Reference Include="CookComputing.XmlRpcV2, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>libs\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
-    <Reference Include="EmoteEvents">
-      <HintPath>..\..\SERA\Binaries\Skene1\EmoteEvents.dll</HintPath>
+    <Reference Include="EmoteEvents, Version=1.0.6432.28296, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>libs\EmoteEvents.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,8 +49,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Thalamus">
-      <HintPath>..\..\SERA\Binaries\Thalamus\Thalamus.dll</HintPath>
+    <Reference Include="Thalamus, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>libs\Thalamus.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

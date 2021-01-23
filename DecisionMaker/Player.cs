@@ -42,6 +42,12 @@ namespace DecisionMaker
             UpdatesDispatcher.Start();
         }
 
+        public bool IsGazingAtRobot()
+        {
+            return CurrentGazeBehaviour.Target == PlayerGazeAtRobot;
+        }
+
+
         public void GazeEvent(string target, double timeMiliseconds)
         {
             if (CurrentGazeBehaviour == null || CurrentGazeBehaviour.Target != target)
@@ -53,7 +59,7 @@ namespace DecisionMaker
                 buffer.Add(target);
             }
 
-            if (buffer.Count == 3)
+            if (buffer.Count == 1)
             {
                 buffer = new List<string>();
                 GazeEvent ge = new GazeEvent(target, timeMiliseconds);
@@ -160,6 +166,10 @@ namespace DecisionMaker
                         CurrentGazeBehaviour.UpdateEndtingTime(ge.Timestamp);
                         gazeBehaviors.Add(CurrentGazeBehaviour);
                         CurrentGazeBehaviour = new GazeBehavior(ID, ge.Target, ge.Timestamp);
+                        if (ge.Target != "elsewhere")
+                        {
+                            DecisionMakerTC.LastMovingRobot = this;
+                        }
                     }
                     else if (ge.Target == CurrentGazeBehaviour.Target)
                     {

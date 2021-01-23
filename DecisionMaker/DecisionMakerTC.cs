@@ -66,6 +66,7 @@ namespace DecisionMaker
         private int ID;
         private Player player0;
         private Player player1;
+        public static Player LastMovingRobot;
         private Thread mainLoop;
         private Stopwatch stopWatch;
         private int nextGazeShiftEstimate;
@@ -102,19 +103,19 @@ namespace DecisionMaker
             {
                 if (sessionStarted)
                 {
-                    if (player0.SessionStarted && player0.CurrentGazeBehaviour != null)
+                    if (player0.SessionStarted && player0.CurrentGazeBehaviour != null && player1.SessionStarted && player1.CurrentGazeBehaviour != null)
                     {
-                        if (player0.CurrentGazeBehaviour.Target == player0.PlayerGazeAtRobot && currentTarget != player0.RobotGazeAtPlayer)
+                        if (LastMovingRobot.IsGazingAtRobot() && currentTarget != LastMovingRobot.RobotGazeAtPlayer)
                         {
-                            currentTarget = player0.RobotGazeAtPlayer;
-                            gPublisher.GazeAtTarget(player0.RobotGazeAtPlayer);
-                            Console.WriteLine("------------ gaze at player");
+                            currentTarget = LastMovingRobot.RobotGazeAtPlayer;
+                            gPublisher.GazeAtTarget(LastMovingRobot.RobotGazeAtPlayer);
+                            Console.WriteLine("------------ gaze back " + LastMovingRobot.RobotGazeAtPlayer);
                         }
-                        else if (player0.CurrentGazeBehaviour.Target != player0.PlayerGazeAtRobot && currentTarget != player0.CurrentGazeBehaviour.Target)
+                        else if (!LastMovingRobot.IsGazingAtRobot() && LastMovingRobot.CurrentGazeBehaviour.Target != "elsewhere" && currentTarget != LastMovingRobot.CurrentGazeBehaviour.Target)
                         {
-                            currentTarget = player0.CurrentGazeBehaviour.Target;
-                            gPublisher.GazeAtTarget(player0.CurrentGazeBehaviour.Target);
-                            Console.WriteLine("------------ gaze at where player is gazing " + player0.CurrentGazeBehaviour.Target);
+                            currentTarget = LastMovingRobot.CurrentGazeBehaviour.Target;
+                            gPublisher.GazeAtTarget(LastMovingRobot.CurrentGazeBehaviour.Target);
+                            Console.WriteLine("------------ gaze at where " + LastMovingRobot.RobotGazeAtPlayer + " is gazing " + LastMovingRobot.CurrentGazeBehaviour.Target);
                         }
                     }
                 }
