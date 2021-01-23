@@ -59,7 +59,7 @@ namespace DecisionMaker
                 buffer.Add(target);
             }
 
-            if (buffer.Count == 3)
+            if (buffer.Count == 1)
             {
                 buffer = new List<string>();
                 GazeEvent ge = new GazeEvent(target, timeMiliseconds);

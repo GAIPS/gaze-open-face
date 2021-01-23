@@ -49,7 +49,7 @@ namespace GazeOpenFace
         SubscriberSocket socketSubscriber;
         public bool CalibrationPhase;
         public int currentTargetBeingCalibrated;
-        private int GROUND_TRUTH_SAMPLES = 100;
+        private int GROUND_TRUTH_SAMPLES = 30;
         private int DIST_THRESHOLD = 80;
         List<GazeTarget> gazeTargets;
         Stopwatch stopWatch;
@@ -154,7 +154,7 @@ namespace GazeOpenFace
                 buffer++;
                 var msg = socketSubscriber.ReceiveFrameString();
                 //Console.WriteLine(msg);
-                if (buffer == 5)
+                if (buffer == 3)
                 {
                     buffer = 0;
                     string[] firstParse = msg.Split(':');
