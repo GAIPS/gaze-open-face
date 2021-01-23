@@ -11,13 +11,13 @@ namespace DecisionMaker
     {
         public int ID;
         public string PlayerGazeAtRobot;
-        public string RobotGazeAtPlayer;
+        public string Name;
         public GazeBehavior CurrentGazeBehaviour;
         private double lastEventTime;
         public double GazeShiftPeriod;
         public double GazeRobotAvgDur;
         public double GazeRobotPeriod;
-        public int PERIOD_TIME_WINDOW = 10; //5 seconds
+        public int PERIOD_TIME_WINDOW = 5; //5 seconds
         private List<GazeBehavior> gazeBehaviors;
         private List<GazeEvent> gazeEvents;
         public Thread UpdatesDispatcher;
@@ -30,7 +30,7 @@ namespace DecisionMaker
         {
             ID = id;
             PlayerGazeAtRobot = "player2";
-            RobotGazeAtPlayer = "player" + id;
+            Name = "player" + id;
             CurrentGazeBehaviour = null;
             SessionStarted = false;
             buffer = new List<string>();
@@ -59,7 +59,7 @@ namespace DecisionMaker
                 buffer.Add(target);
             }
 
-            if (buffer.Count == 1)
+            if (buffer.Count == 3)
             {
                 buffer = new List<string>();
                 GazeEvent ge = new GazeEvent(target, timeMiliseconds);

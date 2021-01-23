@@ -73,6 +73,8 @@ namespace DecisionMaker
         //private long previousGazeShitTime;
         private string currentTarget;
         private bool sessionStarted;
+        private int PROACTIVE_THRESHOLD = 3000;//miliseconds
+        private Random random;
 
         public DecisionMakerTC() : base("DecisionMaker", "SERA")
         {
@@ -88,6 +90,7 @@ namespace DecisionMaker
             stopWatch.Start();
             mainLoop = new Thread(Update);
             mainLoop.Start();
+            random = new Random();
         }
 
         public override void Dispose()
@@ -106,17 +109,73 @@ namespace DecisionMaker
                 {
                     if (player0.SessionStarted && player0.CurrentGazeBehaviour != null && player1.SessionStarted && player1.CurrentGazeBehaviour != null)
                     {
-                        if (LastMovingPlayer.IsGazingAtRobot() && currentTarget != LastMovingPlayer.RobotGazeAtPlayer)
+                        //reactive
+                        if (LastMovingPlayer.IsGazingAtRobot() && currentTarget != LastMovingPlayer.Name)
                         {
-                            currentTarget = LastMovingPlayer.RobotGazeAtPlayer;
-                            gPublisher.GazeAtTarget(LastMovingPlayer.RobotGazeAtPlayer);
-                            Console.WriteLine("------------ gaze back " + LastMovingPlayer.RobotGazeAtPlayer);
+                            currentTarget = LastMovingPlayer.Name;
+                            gPublisher.GazeAtTarget(LastMovingPlayer.Name);
+                            stopWatch.Restart();
+                            Console.WriteLine("------------ gaze back " + LastMovingPlayer.Name);
                         }
                         else if (!LastMovingPlayer.IsGazingAtRobot() && LastMovingPlayer.CurrentGazeBehaviour.Target != "elsewhere" && currentTarget != LastMovingPlayer.CurrentGazeBehaviour.Target)
                         {
                             currentTarget = LastMovingPlayer.CurrentGazeBehaviour.Target;
                             gPublisher.GazeAtTarget(LastMovingPlayer.CurrentGazeBehaviour.Target);
-                            Console.WriteLine("------------ gaze at where " + LastMovingPlayer.RobotGazeAtPlayer + " is gazing " + LastMovingPlayer.CurrentGazeBehaviour.Target);
+                            stopWatch.Restart();
+                            Console.WriteLine("------------ gaze at where " + LastMovingPlayer.Name + " is gazing " + LastMovingPlayer.CurrentGazeBehaviour.Target);
+                        }
+
+                        //proactive
+                        if (stopWatch.ElapsedMilliseconds > PROACTIVE_THRESHOLD)
+                        {
+                            string newTarget = "";
+                            if (currentTarget == "mainscreen")
+                            {
+                                bool shouldLookAtP0 = player0.GazeRobotPeriod < player0.PERIOD_TIME_WINDOW && stopWatch.ElapsedMilliseconds > player0.GazeRobotPeriod;
+                                bool shouldLookAtP1 = player1.GazeRobotPeriod < player1.PERIOD_TIME_WINDOW && stopWatch.ElapsedMilliseconds > player1.GazeRobotPeriod;
+                                if (shouldLookAtP0 && shouldLookAtP1)
+                                {
+                                    int randomize = random.Next(2);
+                                    if (randomize == 0)
+                                    {
+                                        newTarget = player0.Name;
+                                    }
+                                    else
+                                    {
+                                        newTarget = player1.Name;
+                                    }
+                                }
+                                else if (shouldLookAtP0)
+                                {
+                                    newTarget = player0.Name;
+                                }
+                                else if (shouldLookAtP1)
+                                {
+                                    newTarget = player1.Name;
+                                }
+                            }
+                            else if (currentTarget == player0.Name)
+                            {
+                                if (player1.GazeRobotPeriod < player1.PERIOD_TIME_WINDOW && stopWatch.ElapsedMilliseconds > player1.GazeRobotPeriod)
+                                {
+                                    newTarget = player1.Name;
+                                }
+                            }
+                            else if (currentTarget == player1.Name)
+                            {
+                                if (player0.GazeRobotPeriod < player0.PERIOD_TIME_WINDOW && stopWatch.ElapsedMilliseconds > player0.GazeRobotPeriod)
+                                {
+                                    newTarget = player0.Name;
+                                }
+                            }
+
+                            if (newTarget != "")
+                            {
+                                currentTarget = newTarget;
+                                gPublisher.GazeAtTarget(newTarget);
+                                stopWatch.Restart();
+                                Console.WriteLine("------PROACTIVE------ gaze at " + newTarget);
+                            }
                         }
                     }
                 }
