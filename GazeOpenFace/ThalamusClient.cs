@@ -154,7 +154,7 @@ namespace GazeOpenFace
                 buffer++;
                 var msg = socketSubscriber.ReceiveFrameString();
                 //Console.WriteLine(msg);
-                if (buffer == 3)
+                if (buffer == 1)
                 {
                     buffer = 0;
                     string[] firstParse = msg.Split(':');
