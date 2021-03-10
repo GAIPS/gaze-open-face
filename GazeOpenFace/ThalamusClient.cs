@@ -72,14 +72,14 @@ namespace GazeOpenFace
             // ADD TARGETS IN THE SAME ORDER of enum Targets
             if (faceId == 0)
             {
-                gazeTargets.Add(new GazeTarget("player1", GROUND_TRUTH_SAMPLES, 80));
+                gazeTargets.Add(new GazeTarget("player1", GROUND_TRUTH_SAMPLES, 100));
             }
             else if (faceId == 1)
             {
-                gazeTargets.Add(new GazeTarget("player0", GROUND_TRUTH_SAMPLES, 80));
+                gazeTargets.Add(new GazeTarget("player0", GROUND_TRUTH_SAMPLES, 100));
             }
-            gazeTargets.Add(new GazeTarget("player2", GROUND_TRUTH_SAMPLES, 80));
-            gazeTargets.Add(new GazeTarget("mainscreen", GROUND_TRUTH_SAMPLES, 80));
+            gazeTargets.Add(new GazeTarget("player2", GROUND_TRUTH_SAMPLES, 100));
+            gazeTargets.Add(new GazeTarget("mainscreen", GROUND_TRUTH_SAMPLES, 100));
 
             stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -154,7 +154,7 @@ namespace GazeOpenFace
                 buffer++;
                 var msg = socketSubscriber.ReceiveFrameString();
                 //Console.WriteLine(msg);
-                if (buffer == 1)
+                if (buffer == 3)
                 {
                     buffer = 0;
                     string[] firstParse = msg.Split(':');
