@@ -231,7 +231,7 @@ namespace GazeOpenFace
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_B].Name, stopWatch.Elapsed.TotalSeconds);
                                 Console.WriteLine(gazeTargets[(int)Targets.PLAYER_B].Name);
                             }
-                            else if (currentTarget != "elsewhere")
+                            else if (currentTarget != "elsewhere" && !gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA) && !gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB) && !gazeTargets[(int)Targets.MAINSCREEN].IsLookingAtTarget(distMAINSCREEN))
                             {
                                 currentTarget = "elsewhere";
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "elsewhere", stopWatch.Elapsed.TotalSeconds);
