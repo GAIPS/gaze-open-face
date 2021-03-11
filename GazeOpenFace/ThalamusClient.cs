@@ -55,6 +55,7 @@ namespace GazeOpenFace
         Stopwatch stopWatch;
         private Thread MessageDispatcher;
         private Thread CalibrationThread;
+        private string currentTarget;
 
         enum Targets
         {
@@ -66,6 +67,7 @@ namespace GazeOpenFace
         public GazeThalamusClient(string clientName, int faceId) : base(clientName, "SERA")
         {
             id = faceId;
+            currentTarget = "";
 
             CalibrationPhase = true;
             gazeTargets = new List<GazeTarget>();
@@ -211,23 +213,27 @@ namespace GazeOpenFace
                             {
                                 Console.WriteLine("WEIRD CASE");
                             }
-                            else if (gazeTargets[(int)Targets.MAINSCREEN].IsLookingAtTarget(distMAINSCREEN))
+                            else if (currentTarget != gazeTargets[(int)Targets.MAINSCREEN].Name && gazeTargets[(int)Targets.MAINSCREEN].IsLookingAtTarget(distMAINSCREEN))
                             {
+                                currentTarget = gazeTargets[(int)Targets.MAINSCREEN].Name;
                                 Console.WriteLine("MAINSCREEN");
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.MAINSCREEN].Name, stopWatch.Elapsed.TotalSeconds);
                             }
-                            else if (gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA))
+                            else if (currentTarget != gazeTargets[(int)Targets.PLAYER_A].Name && gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA))
                             {
+                                currentTarget = gazeTargets[(int)Targets.PLAYER_A].Name;
                                 Console.WriteLine(gazeTargets[(int)Targets.PLAYER_A].Name);
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_A].Name, stopWatch.Elapsed.TotalSeconds);
                             }
-                            else if (gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
+                            else if (currentTarget != gazeTargets[(int)Targets.PLAYER_B].Name && gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
                             {
+                                currentTarget = gazeTargets[(int)Targets.PLAYER_B].Name;
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, gazeTargets[(int)Targets.PLAYER_B].Name, stopWatch.Elapsed.TotalSeconds);
                                 Console.WriteLine(gazeTargets[(int)Targets.PLAYER_B].Name);
                             }
-                            else
+                            else if (currentTarget != "elsewhere")
                             {
+                                currentTarget = "elsewhere";
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "elsewhere", stopWatch.Elapsed.TotalSeconds);
                                 Console.WriteLine("ELSEWHERE");
                             }
