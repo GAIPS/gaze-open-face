@@ -208,8 +208,33 @@ namespace GazeOpenFace
                             double distMAINSCREEN = gazeTargets[(int)Targets.MAINSCREEN].DistanceFromPoint(newLocationFromCam);
                             //Console.WriteLine("Dist-LEFT: {0}   Dist-RIGHT: {1}", distLEFT, distRIGHT);
                             //Console.WriteLine("X,Y: {0},{1}   Left: {2},{3}   Right: {4},{5}", newLocationFromCam.X, newLocationFromCam.Y, leftLocationFromCam.X, leftLocationFromCam.Y, rightLocationFromCam.X, rightLocationFromCam.Y);
+                            string closestTarget;
+                            if (distPlayerA < distPlayerB && distPlayerA < distMAINSCREEN)
+                            {
+                                closestTarget = gazeTargets[(int)Targets.PLAYER_A].Name;
+                            }
+                            else if (distPlayerB < distPlayerA && distPlayerB < distMAINSCREEN)
+                            {
+                                closestTarget = gazeTargets[(int)Targets.PLAYER_B].Name;
+                            }
+                            else if (distMAINSCREEN < distPlayerA && distMAINSCREEN < distPlayerB)
+                            {
+                                closestTarget = gazeTargets[(int)Targets.MAINSCREEN].Name;
+                            }
+                            else
+                            {
+                                closestTarget = "elsewhere";
+                            }
 
-                            if (gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA) && gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
+
+                            if (currentTarget != closestTarget)
+                            {
+                                currentTarget = closestTarget;
+                                Console.WriteLine(closestTarget);
+                                gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, closestTarget, stopWatch.Elapsed.TotalSeconds);
+                            }
+
+                            /*if (gazeTargets[(int)Targets.PLAYER_A].IsLookingAtTarget(distPlayerA) && gazeTargets[(int)Targets.PLAYER_B].IsLookingAtTarget(distPlayerB))
                             {
                                 Console.WriteLine("WEIRD CASE");
                             }
@@ -236,7 +261,7 @@ namespace GazeOpenFace
                                 currentTarget = "elsewhere";
                                 gPublisher.GazeOpenFace(id, newGA.X, newGA.Y, "elsewhere", stopWatch.Elapsed.TotalSeconds);
                                 Console.WriteLine("ELSEWHERE");
-                            }
+                            }*/
                         }
                     }
                 }
